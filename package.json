@@ -88,7 +88,7 @@
     "@docusaurus/types": "~3.10.2",
     "@ideal-postcodes/openapi": "~4.21.0",
     "@mdx-js/react": "~3.1.1",
-    "@redocly/cli": "~2.47.0",
+    "@redocly/cli": "~2.51.2",
     "@semantic-release/changelog": "~7.0.0",
     "@semantic-release/git": "~11.0.0",
     "@svgr/webpack": "~8.1.0",
