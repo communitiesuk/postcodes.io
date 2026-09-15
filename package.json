@@ -68,7 +68,7 @@
     "express-rate-limit": "~8.7.0",
     "helmet": "~8.3.0",
     "minimist": "~1.2.8",
-    "morgan": "~1.11.0",
+    "morgan": "~1.12.1",
     "pg": "~8.23.0",
     "pino": "~10.3.1",
     "postcode": "~5.1.0",
