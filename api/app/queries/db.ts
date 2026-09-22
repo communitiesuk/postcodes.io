@@ -2,11 +2,9 @@ import { Pool, QueryConfig, QueryResult, QueryResultRow } from "pg";
 import { getConfig } from "../../config/config";
 import { getAzureAdToken } from "../lib/azure_auth";
 
+// `postgres` carries the connection details plus pool sizing (`max`) and the
+// per-connection `statement_timeout`, all env-configurable via config.ts.
 const { postgres } = getConfig();
-
-const max = process.env.POSTGRES_POOL_MAX
-  ? parseInt(process.env.POSTGRES_POOL_MAX, 10)
-  : 10;
 
 // When Azure AD authentication is enabled, use a managed identity token as the
 // password instead of a static credential. The pg Pool accepts a function for
@@ -34,7 +32,7 @@ const poolConfig = azureAdAuthEnabled
     }
   : postgres;
 
-export const pool = new Pool({ ...poolConfig, max });
+export const pool = new Pool(poolConfig);
 
 export const query = <T extends QueryResultRow = any>(
   text: string | QueryConfig,

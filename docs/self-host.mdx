@@ -42,13 +42,15 @@ Configuration is environment-variable-driven.
 
 #### Database
 
-| Variable            | Purpose            |
-| ------------------- | ------------------ |
-| `POSTGRES_USER`     | Database username. |
-| `POSTGRES_PASSWORD` | Database password. |
-| `POSTGRES_DATABASE` | Database name.     |
-| `POSTGRES_HOST`     | Database host.     |
-| `POSTGRES_PORT`     | Database port.     |
+| Variable                     | Purpose                                                                                                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_USER`              | Database username.                                                                                                                                                                       |
+| `POSTGRES_PASSWORD`          | Database password.                                                                                                                                                                       |
+| `POSTGRES_DATABASE`          | Database name.                                                                                                                                                                           |
+| `POSTGRES_HOST`              | Database host.                                                                                                                                                                           |
+| `POSTGRES_PORT`              | Database port.                                                                                                                                                                           |
+| `POSTGRES_POOL_MAX`          | Maximum connections in the pool per API instance. Default `10`. Size it against your database's connection limit divided by the number of API instances.                                 |
+| `POSTGRES_STATEMENT_TIMEOUT` | Server-side `statement_timeout` in milliseconds applied to every pooled connection, so a slow query is cancelled by Postgres instead of tying up the pool. Default `5000`; `0` disables. |
 
 #### Logging & metrics
 
