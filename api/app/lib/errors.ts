@@ -23,7 +23,9 @@ export class PostcodesioHttpError extends Error {
     super(message);
     // Set the prototype explicitly
     // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
-    Object.setPrototypeOf(this, PostcodesioHttpError.prototype);
+    // new.target keeps the subclass prototype so instanceof and name work for
+    // every subclass, not only the base.
+    Object.setPrototypeOf(this, new.target.prototype);
     this.name = this.constructor.name;
     this.status = status;
     this.humanMessage = humanMessage;
@@ -196,3 +198,67 @@ export class NotReadyError extends PostcodesioHttpError {
     super(500, "Service not ready. Database is not available");
   }
 }
+
+const DB_TIMEOUT_MESSAGE =
+  "Database query timed out. Please retry the request.";
+
+/**
+ * The database cancelled the query because it exceeded statement_timeout
+ * (SQLSTATE 57014). Distinct from a generic 500 so clients back off and
+ * retry, and so timeouts under load are visible in logs and metrics.
+ */
+export class DatabaseTimeoutError extends PostcodesioHttpError {
+  constructor() {
+    super(503, DB_TIMEOUT_MESSAGE);
+  }
+}
+
+const DB_POOL_TIMEOUT_MESSAGE =
+  "Database connection pool exhausted. Please retry the request.";
+
+/**
+ * No pooled connection became available within connectionTimeoutMillis.
+ */
+export class DatabasePoolTimeoutError extends PostcodesioHttpError {
+  constructor() {
+    super(503, DB_POOL_TIMEOUT_MESSAGE);
+  }
+}
+
+// SQLSTATE raised by Postgres when statement_timeout cancels a query
+const PG_QUERY_CANCELED = "57014";
+// Messages pg-pool raises when connectionTimeoutMillis elapses: waiting for
+// a slot in a full pool, and establishing a new physical connection.
+// Covered by a real pool timeout in test/db_timeout.integration.ts so a
+// pg-pool bump that rewords them fails CI rather than silently returning 500.
+const PG_POOL_TIMEOUT_MESSAGES = [
+  "timeout exceeded when trying to connect",
+  "Connection terminated due to connection timeout",
+];
+
+const SQLSTATE = /^[0-9A-Z]{5}$/;
+
+/**
+ * The SQLSTATE code carried by a node-postgres error, or undefined for
+ * anything else (Node system errors and body-parser errors also carry a
+ * `code`, but not in SQLSTATE shape).
+ */
+export const pgErrorCode = (error: unknown): string | undefined => {
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === "string" && SQLSTATE.test(code) ? code : undefined;
+};
+
+/**
+ * Maps a node-postgres error to an API error, or null if it is not one of
+ * the timeout conditions handled here.
+ */
+export const mapDatabaseError = (
+  error: unknown
+): DatabaseTimeoutError | DatabasePoolTimeoutError | null => {
+  if (!(error instanceof Error)) return null;
+  if (pgErrorCode(error) === PG_QUERY_CANCELED)
+    return new DatabaseTimeoutError();
+  if (PG_POOL_TIMEOUT_MESSAGES.includes(error.message))
+    return new DatabasePoolTimeoutError();
+  return null;
+};
