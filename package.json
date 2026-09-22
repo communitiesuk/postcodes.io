@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "cors": "~2.8.6",
-    "dotenv": "~17.4.2",
+    "dotenv": "~18.0.1",
     "escape-string-regexp": "^5.0.0",
     "express": "~5.2.1",
     "express-basic-auth": "~1.2.1",
