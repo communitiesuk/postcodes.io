@@ -42,15 +42,16 @@ Configuration is environment-variable-driven.
 
 #### Database
 
-| Variable                     | Purpose                                                                                                                                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_USER`              | Database username.                                                                                                                                                                       |
-| `POSTGRES_PASSWORD`          | Database password.                                                                                                                                                                       |
-| `POSTGRES_DATABASE`          | Database name.                                                                                                                                                                           |
-| `POSTGRES_HOST`              | Database host.                                                                                                                                                                           |
-| `POSTGRES_PORT`              | Database port.                                                                                                                                                                           |
-| `POSTGRES_POOL_MAX`          | Maximum connections in the pool per API instance. Default `10`. Size it against your database's connection limit divided by the number of API instances.                                 |
-| `POSTGRES_STATEMENT_TIMEOUT` | Server-side `statement_timeout` in milliseconds applied to every pooled connection, so a slow query is cancelled by Postgres instead of tying up the pool. Default `5000`; `0` disables. |
+| Variable                      | Purpose                                                                                                                                                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_USER`               | Database username.                                                                                                                                                                                         |
+| `POSTGRES_PASSWORD`           | Database password.                                                                                                                                                                                         |
+| `POSTGRES_DATABASE`           | Database name.                                                                                                                                                                                             |
+| `POSTGRES_HOST`               | Database host.                                                                                                                                                                                             |
+| `POSTGRES_PORT`               | Database port.                                                                                                                                                                                             |
+| `POSTGRES_POOL_MAX`           | Maximum connections in the pool per API instance. Default `10`. Size it against your database's connection limit divided by the number of API instances.                                                   |
+| `POSTGRES_STATEMENT_TIMEOUT`  | Server-side `statement_timeout` in milliseconds applied to every pooled connection, so a slow query is cancelled by Postgres instead of tying up the pool. Default `5000`; `0` disables.                   |
+| `POSTGRES_CONNECTION_TIMEOUT` | How long in milliseconds a request may wait for a pooled connection (including queueing behind other requests when the pool is full) before the API returns `503`. Default `5000`; `0` waits indefinitely. |
 
 #### Logging & metrics
 

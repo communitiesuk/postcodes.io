@@ -6,6 +6,7 @@ import {
   PostcodesioHttpError,
   InvalidJsonError,
   NotFoundError,
+  mapDatabaseError,
 } from "../app/lib/errors";
 
 const genericError = new PostcodesioHttpError();
@@ -41,7 +42,20 @@ const errorRenderer = (
   next: Next
 ) => {
   /*jshint unused: false */
-  logger.error({ error: error.message });
+  const databaseError = mapDatabaseError(error);
+  const pgCode = (error as { code?: string }).code;
+  logger.error({
+    error: error.message,
+    ...(pgCode !== undefined && { pg_code: pgCode }),
+    ...(databaseError !== null && { db_timeout: true }),
+  });
+
+  // Query cancelled by statement_timeout, or no pooled connection within
+  // connectionTimeoutMillis: tell the client to back off and retry.
+  if (databaseError !== null) {
+    response.set("Retry-After", "1");
+    return applyError(response, databaseError);
+  }
 
   //check if bodyParser.json() fails to parse JSON request
   if (

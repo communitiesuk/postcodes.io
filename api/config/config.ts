@@ -36,6 +36,13 @@ interface PostgresConfig {
    * 0 disables it. Env: POSTGRES_STATEMENT_TIMEOUT
    */
   statement_timeout: number;
+  /**
+   * How long (ms) a query may wait for a pooled connection, including time
+   * queued behind other requests when the pool is full, before failing with
+   * a 503 rather than queueing without bound. 0 disables.
+   * Env: POSTGRES_CONNECTION_TIMEOUT
+   */
+  connectionTimeoutMillis: number;
 }
 
 interface LogConfig {
@@ -68,6 +75,7 @@ const config: Record<Env, Config> = {
       port: 5432,
       max: 10,
       statement_timeout: 5000,
+      connectionTimeoutMillis: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -89,6 +97,7 @@ const config: Record<Env, Config> = {
       port: 5432,
       max: 10,
       statement_timeout: 5000,
+      connectionTimeoutMillis: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -110,6 +119,7 @@ const config: Record<Env, Config> = {
       port: 5432,
       max: 10,
       statement_timeout: 5000,
+      connectionTimeoutMillis: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -153,6 +163,7 @@ export const getConfig = (env?: Env): Config => {
     POSTGRES_PORT,
     POSTGRES_POOL_MAX,
     POSTGRES_STATEMENT_TIMEOUT,
+    POSTGRES_CONNECTION_TIMEOUT,
     LOG_NAME,
     GA_KEY,
     LOG_DESTINATION,
@@ -184,6 +195,12 @@ export const getConfig = (env?: Env): Config => {
     cfg.postgres.statement_timeout = parseIntegerEnv(
       "POSTGRES_STATEMENT_TIMEOUT",
       POSTGRES_STATEMENT_TIMEOUT,
+      0
+    );
+  if (POSTGRES_CONNECTION_TIMEOUT !== undefined)
+    cfg.postgres.connectionTimeoutMillis = parseIntegerEnv(
+      "POSTGRES_CONNECTION_TIMEOUT",
+      POSTGRES_CONNECTION_TIMEOUT,
       0
     );
 

@@ -28,6 +28,7 @@ POSTGRES_HOST # Postgres host
 POSTGRES_PORT # Postgres port
 POSTGRES_POOL_MAX # Max connections in the pg pool per instance (default 10)
 POSTGRES_STATEMENT_TIMEOUT # Server-side statement_timeout in ms on every pooled connection (default 5000, 0 disables)
+POSTGRES_CONNECTION_TIMEOUT # Max ms to wait for a pooled connection before returning 503 (default 5000, 0 waits indefinitely)
 
 # Logging
 LOG_NAME # Name attached to JSON log output

@@ -196,3 +196,51 @@ export class NotReadyError extends PostcodesioHttpError {
     super(500, "Service not ready. Database is not available");
   }
 }
+
+const DB_TIMEOUT_MESSAGE =
+  "Database query timed out. Please retry the request.";
+
+/**
+ * The database cancelled the query because it exceeded statement_timeout
+ * (SQLSTATE 57014). Distinct from a generic 500 so clients back off and
+ * retry, and so timeouts under load are visible in logs and metrics.
+ */
+export class DatabaseTimeoutError extends PostcodesioHttpError {
+  constructor() {
+    super(503, DB_TIMEOUT_MESSAGE);
+    Object.setPrototypeOf(this, DatabaseTimeoutError.prototype);
+  }
+}
+
+const DB_POOL_TIMEOUT_MESSAGE =
+  "Database connection pool exhausted. Please retry the request.";
+
+/**
+ * No pooled connection became available within connectionTimeoutMillis.
+ */
+export class DatabasePoolTimeoutError extends PostcodesioHttpError {
+  constructor() {
+    super(503, DB_POOL_TIMEOUT_MESSAGE);
+    Object.setPrototypeOf(this, DatabasePoolTimeoutError.prototype);
+  }
+}
+
+// SQLSTATE raised by Postgres when statement_timeout cancels a query
+const PG_QUERY_CANCELED = "57014";
+// Message pg-pool uses when connectionTimeoutMillis elapses
+const PG_POOL_TIMEOUT_MESSAGE = "timeout exceeded when trying to connect";
+
+/**
+ * Maps a node-postgres error to an API error, or null if it is not one of
+ * the timeout conditions handled here.
+ */
+export const mapDatabaseError = (
+  error: unknown
+): PostcodesioHttpError | null => {
+  if (!(error instanceof Error)) return null;
+  if ((error as { code?: string }).code === PG_QUERY_CANCELED)
+    return new DatabaseTimeoutError();
+  if (error.message === PG_POOL_TIMEOUT_MESSAGE)
+    return new DatabasePoolTimeoutError();
+  return null;
+};
