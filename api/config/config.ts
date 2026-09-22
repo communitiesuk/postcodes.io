@@ -37,10 +37,11 @@ interface PostgresConfig {
    */
   statement_timeout: number;
   /**
-   * How long (ms) a query may wait for a pooled connection, including time
-   * queued behind other requests when the pool is full, before failing with
-   * a 503 rather than queueing without bound. 0 disables.
-   * Env: POSTGRES_CONNECTION_TIMEOUT
+   * How long (ms) a query may wait for a database connection before failing
+   * with a 503 rather than queueing without bound. pg-pool applies it both to
+   * waiting for a slot when the pool is full and to establishing a new
+   * physical connection (TLS, auth and, with Azure AD, the token fetch).
+   * 0 disables. Env: POSTGRES_CONNECTION_TIMEOUT
    */
   connectionTimeoutMillis: number;
 }

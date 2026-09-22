@@ -6,8 +6,19 @@ import {
   PostcodesioHttpError,
   InvalidJsonError,
   NotFoundError,
+  DatabasePoolTimeoutError,
   mapDatabaseError,
+  pgErrorCode,
 } from "../app/lib/errors";
+import { getConfig } from "./config";
+
+const { postgres } = getConfig();
+// A pool-wait timeout means the client already waited connectionTimeoutMillis
+// for a slot; retrying after 1s would re-enter the same saturated pool.
+const poolRetryAfterSeconds = Math.max(
+  1,
+  Math.ceil(postgres.connectionTimeoutMillis / 1000)
+);
 
 const genericError = new PostcodesioHttpError();
 const invalidJsonError = new InvalidJsonError();
@@ -43,17 +54,23 @@ const errorRenderer = (
 ) => {
   /*jshint unused: false */
   const databaseError = mapDatabaseError(error);
-  const pgCode = (error as { code?: string }).code;
+  const isPoolTimeout = databaseError instanceof DatabasePoolTimeoutError;
+  const pgCode = pgErrorCode(error);
   logger.error({
     error: error.message,
     ...(pgCode !== undefined && { pg_code: pgCode }),
-    ...(databaseError !== null && { db_timeout: true }),
+    ...(databaseError !== null && {
+      db_timeout: isPoolTimeout ? "pool" : "statement",
+    }),
   });
 
   // Query cancelled by statement_timeout, or no pooled connection within
   // connectionTimeoutMillis: tell the client to back off and retry.
   if (databaseError !== null) {
-    response.set("Retry-After", "1");
+    response.set(
+      "Retry-After",
+      String(isPoolTimeout ? poolRetryAfterSeconds : 1)
+    );
     return applyError(response, databaseError);
   }
 
