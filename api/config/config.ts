@@ -122,6 +122,22 @@ const config: Record<Env, Config> = {
   },
 };
 
+/**
+ * Parse an integer environment variable, rejecting anything that is not a
+ * plain non-negative integer literal at or above `min`. A bare parseInt would
+ * turn "5s" into 5, "abc" into NaN and accept negatives, each of which pg
+ * either silently ignores or rejects at connection time.
+ */
+const parseIntegerEnv = (name: string, value: string, min: number): number => {
+  const n = /^\d+$/.test(value.trim()) ? parseInt(value, 10) : NaN;
+  if (!Number.isInteger(n) || n < min) {
+    throw new Error(
+      `Invalid ${name}: expected an integer >= ${min}, got "${value}"`
+    );
+  }
+  return n;
+};
+
 export const getConfig = (env?: Env): Config => {
   const environment = env || defaultEnv;
 
@@ -159,9 +175,17 @@ export const getConfig = (env?: Env): Config => {
   if (POSTGRES_PORT !== undefined)
     cfg.postgres.port = parseInt(POSTGRES_PORT, 10);
   if (POSTGRES_POOL_MAX !== undefined)
-    cfg.postgres.max = parseInt(POSTGRES_POOL_MAX, 10);
+    cfg.postgres.max = parseIntegerEnv(
+      "POSTGRES_POOL_MAX",
+      POSTGRES_POOL_MAX,
+      1
+    );
   if (POSTGRES_STATEMENT_TIMEOUT !== undefined)
-    cfg.postgres.statement_timeout = parseInt(POSTGRES_STATEMENT_TIMEOUT, 10);
+    cfg.postgres.statement_timeout = parseIntegerEnv(
+      "POSTGRES_STATEMENT_TIMEOUT",
+      POSTGRES_STATEMENT_TIMEOUT,
+      0
+    );
 
   if (LOG_NAME !== undefined) cfg.log.name = LOG_NAME;
   if (LOG_DESTINATION !== undefined) cfg.log.file = LOG_DESTINATION;

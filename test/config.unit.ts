@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterAll } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, afterAll } from "vitest";
 import { configFactory } from "./helper";
 
 describe("Config", () => {
@@ -34,6 +34,16 @@ describe("Config", () => {
     });
 
     describe("Postgres pool settings", () => {
+      // getConfig mutates the shared config object, so put the two fields
+      // back after each test rather than relying on declaration order.
+      afterEach(() => {
+        delete process.env["POSTGRES_POOL_MAX"];
+        delete process.env["POSTGRES_STATEMENT_TIMEOUT"];
+        const { postgres } = configFactory();
+        postgres.max = 10;
+        postgres.statement_timeout = 5000;
+      });
+
       it("defaults POSTGRES_POOL_MAX to 10", () => {
         expect(configFactory().postgres.max).toBe(10);
       });
@@ -56,6 +66,22 @@ describe("Config", () => {
         process.env["POSTGRES_STATEMENT_TIMEOUT"] = "0";
         expect(configFactory().postgres.statement_timeout).toBe(0);
       });
+
+      it.each(["abc", "5s", "-1", "", "1.5"])(
+        "rejects POSTGRES_STATEMENT_TIMEOUT=%j",
+        (value) => {
+          process.env["POSTGRES_STATEMENT_TIMEOUT"] = value;
+          expect(() => configFactory()).toThrow(/POSTGRES_STATEMENT_TIMEOUT/);
+        }
+      );
+
+      it.each(["0", "-5", "ten", ""])(
+        "rejects POSTGRES_POOL_MAX=%j",
+        (value) => {
+          process.env["POSTGRES_POOL_MAX"] = value;
+          expect(() => configFactory()).toThrow(/POSTGRES_POOL_MAX/);
+        }
+      );
     });
 
     describe("CORS_ALLOWED_ORIGINS", () => {
