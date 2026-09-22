@@ -28,6 +28,14 @@ interface PostgresConfig {
   database: string;
   host: string;
   port: number;
+  /** Maximum connections in the pg Pool. Env: POSTGRES_POOL_MAX */
+  max: number;
+  /**
+   * Server-side statement_timeout (ms) set on every pooled connection, so a
+   * runaway query is cancelled by Postgres rather than holding a connection.
+   * 0 disables it. Env: POSTGRES_STATEMENT_TIMEOUT
+   */
+  statement_timeout: number;
 }
 
 interface LogConfig {
@@ -58,6 +66,8 @@ const config: Record<Env, Config> = {
       database: "postcodesiodb", // Database name
       host: "localhost",
       port: 5432,
+      max: 10,
+      statement_timeout: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -77,6 +87,8 @@ const config: Record<Env, Config> = {
       database: "postcodeio_testing",
       host: "localhost",
       port: 5432,
+      max: 10,
+      statement_timeout: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -96,6 +108,8 @@ const config: Record<Env, Config> = {
       database: "postcodesiodb",
       host: "localhost",
       port: 5432,
+      max: 10,
+      statement_timeout: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -121,6 +135,8 @@ export const getConfig = (env?: Env): Config => {
     POSTGRES_DATABASE,
     POSTGRES_HOST,
     POSTGRES_PORT,
+    POSTGRES_POOL_MAX,
+    POSTGRES_STATEMENT_TIMEOUT,
     LOG_NAME,
     GA_KEY,
     LOG_DESTINATION,
@@ -142,6 +158,10 @@ export const getConfig = (env?: Env): Config => {
   if (POSTGRES_HOST !== undefined) cfg.postgres.host = POSTGRES_HOST;
   if (POSTGRES_PORT !== undefined)
     cfg.postgres.port = parseInt(POSTGRES_PORT, 10);
+  if (POSTGRES_POOL_MAX !== undefined)
+    cfg.postgres.max = parseInt(POSTGRES_POOL_MAX, 10);
+  if (POSTGRES_STATEMENT_TIMEOUT !== undefined)
+    cfg.postgres.statement_timeout = parseInt(POSTGRES_STATEMENT_TIMEOUT, 10);
 
   if (LOG_NAME !== undefined) cfg.log.name = LOG_NAME;
   if (LOG_DESTINATION !== undefined) cfg.log.file = LOG_DESTINATION;

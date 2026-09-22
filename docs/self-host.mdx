@@ -42,13 +42,15 @@ Configuration is environment-variable-driven.
 
 #### Database
 
-| Variable            | Purpose            |
-| ------------------- | ------------------ |
-| `POSTGRES_USER`     | Database username. |
-| `POSTGRES_PASSWORD` | Database password. |
-| `POSTGRES_DATABASE` | Database name.     |
-| `POSTGRES_HOST`     | Database host.     |
-| `POSTGRES_PORT`     | Database port.     |
+| Variable                     | Purpose                                                                                                                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_USER`              | Database username.                                                                                                                                                                       |
+| `POSTGRES_PASSWORD`          | Database password.                                                                                                                                                                       |
+| `POSTGRES_DATABASE`          | Database name.                                                                                                                                                                           |
+| `POSTGRES_HOST`              | Database host.                                                                                                                                                                           |
+| `POSTGRES_PORT`              | Database port.                                                                                                                                                                           |
+| `POSTGRES_POOL_MAX`          | Maximum connections in the pool per API instance. Default `10`. Size it against your database's connection limit divided by the number of API instances.                                 |
+| `POSTGRES_STATEMENT_TIMEOUT` | Server-side `statement_timeout` in milliseconds applied to every pooled connection, so a slow query is cancelled by Postgres instead of tying up the pool. Default `5000`; `0` disables. |
 
 #### Logging & metrics
 
@@ -84,13 +86,13 @@ All limit variables are integers. Defaults are tuned for a single-node deploymen
 
 All API routes are rate limited per client IP. Health checks (`GET /ping`, `GET /ready`) and the static documentation site are exempt. The bulk endpoint (`POST /postcodes`) has its own, stricter allowance, counted separately from the general limit. Limited requests receive `429` with a JSON error body, and every limited route returns both `RateLimit-*` (IETF draft-6) and legacy `X-RateLimit-*` headers.
 
-| Variable                    | Default | Purpose                                                             |
-| --------------------------- | ------- | ------------------------------------------------------------------- |
-| `RATE_LIMIT_ENABLED`        | `true`  | Set to `false` to disable application-level rate limiting.          |
-| `RATE_LIMIT_WINDOW_MS`      | `60000` | General window size in milliseconds.                                |
-| `RATE_LIMIT_MAX`            | `300`   | Requests allowed per IP per window on `GET` API routes.             |
-| `RATE_LIMIT_BULK_WINDOW_MS` | `60000` | Window size for `POST /postcodes` (bulk lookup / bulk geocode).     |
-| `RATE_LIMIT_BULK_MAX`       | `30`    | Bulk requests allowed per IP per window.                            |
+| Variable                    | Default | Purpose                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RATE_LIMIT_ENABLED`        | `true`  | Set to `false` to disable application-level rate limiting.                                                                                                                                                                                                                                                                                                                                                    |
+| `RATE_LIMIT_WINDOW_MS`      | `60000` | General window size in milliseconds.                                                                                                                                                                                                                                                                                                                                                                          |
+| `RATE_LIMIT_MAX`            | `300`   | Requests allowed per IP per window on `GET` API routes.                                                                                                                                                                                                                                                                                                                                                       |
+| `RATE_LIMIT_BULK_WINDOW_MS` | `60000` | Window size for `POST /postcodes` (bulk lookup / bulk geocode).                                                                                                                                                                                                                                                                                                                                               |
+| `RATE_LIMIT_BULK_MAX`       | `30`    | Bulk requests allowed per IP per window.                                                                                                                                                                                                                                                                                                                                                                      |
 | `TRUST_PROXY`               | unset   | Express [`trust proxy`](https://expressjs.com/en/guide/behind-proxies.html) setting. Unset trusts all proxies (`req.ip` is the leftmost `X-Forwarded-For` entry, which clients can spoof). Behind a known chain set the hop count (e.g. `1` for a single gateway/load balancer) so rate limits key on the true client IP. Also accepts `false`, a preset (e.g. `loopback`) or a comma-separated IP/CIDR list. |
 
 Counters are held in process memory: with several instances behind a load balancer the effective ceiling is `max × instances`, and counters reset on restart. Use a gateway/WAF rate limit for a hard multi-instance guarantee.
