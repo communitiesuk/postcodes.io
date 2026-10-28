@@ -10,7 +10,7 @@ trigger:
 pr: none
 
 pool:
-  name: vmss-shared
+  name: ado-vmss-latest
 
 variables:
   # Prod-scoped group: must provide azureSubscription (service connection) and
@@ -24,7 +24,7 @@ stages:
       - job: Build
         displayName: Build
         pool:
-          name: vmss-shared
+          name: ado-vmss-latest
 
         steps:
           - task: UseNode@1
@@ -105,7 +105,7 @@ stages:
       - job: Deploy
         displayName: Deploy
         pool:
-          name: vmss-shared
+          name: ado-vmss-latest
         steps:
           - download: current
             artifact: drop
