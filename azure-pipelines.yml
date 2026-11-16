@@ -9,7 +9,7 @@ trigger:
 pr: none
 
 pool:
-  name: vmss-shared
+  name: ado-vmss-latest
 
 variables:
   # tst-scoped group (azureSubscription = SPN-dluhctst-LGOF, environmentName = tst).
@@ -23,7 +23,7 @@ stages:
       - job: Build
         displayName: Build
         pool:
-          name: vmss-shared
+          name: ado-vmss-latest
 
         steps:
           - task: UseNode@1
@@ -82,7 +82,7 @@ stages:
       - job: Deploy
         displayName: Deploy
         pool:
-          name: vmss-shared
+          name: ado-vmss-latest
         steps:
           - download: current
             artifact: drop

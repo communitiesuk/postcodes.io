@@ -28,6 +28,24 @@ interface PostgresConfig {
   database: string;
   host: string;
   port: number;
+  /** Maximum connections in the pg Pool. Env: POSTGRES_POOL_MAX */
+  max: number;
+  /**
+   * Server-side statement_timeout (ms) set on every pooled connection, so a
+   * runaway query is cancelled by Postgres rather than holding a connection.
+   * 0 means the client sends no statement_timeout at all (pg only sends it
+   * when truthy), so any server, database or role default still applies.
+   * Env: POSTGRES_STATEMENT_TIMEOUT
+   */
+  statement_timeout: number;
+  /**
+   * How long (ms) a query may wait for a database connection before failing
+   * with a 503 rather than queueing without bound. pg-pool applies it both to
+   * waiting for a slot when the pool is full and to establishing a new
+   * physical connection (TLS, auth and, with Azure AD, the token fetch).
+   * 0 disables. Env: POSTGRES_CONNECTION_TIMEOUT
+   */
+  connectionTimeoutMillis: number;
 }
 
 interface LogConfig {
@@ -58,6 +76,9 @@ const config: Record<Env, Config> = {
       database: "postcodesiodb", // Database name
       host: "localhost",
       port: 5432,
+      max: 10,
+      statement_timeout: 5000,
+      connectionTimeoutMillis: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -77,6 +98,9 @@ const config: Record<Env, Config> = {
       database: "postcodeio_testing",
       host: "localhost",
       port: 5432,
+      max: 10,
+      statement_timeout: 5000,
+      connectionTimeoutMillis: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -96,6 +120,9 @@ const config: Record<Env, Config> = {
       database: "postcodesiodb",
       host: "localhost",
       port: 5432,
+      max: 10,
+      statement_timeout: 5000,
+      connectionTimeoutMillis: 5000,
     },
     log: {
       name: "postcodes.io",
@@ -106,6 +133,31 @@ const config: Record<Env, Config> = {
     urlPrefix: "",
     defaults,
   },
+};
+
+// Largest value both Node's setTimeout (larger delays fire after 1ms) and
+// Postgres' integer statement_timeout parameter accept.
+const MAX_TIMEOUT_MS = 2147483647;
+
+/**
+ * Parse an integer environment variable, rejecting anything that is not a
+ * plain non-negative integer literal within [min, max]. A bare parseInt would
+ * turn "5s" into 5, "abc" into NaN and accept negatives, each of which pg
+ * either silently ignores or rejects at connection time.
+ */
+const parseIntegerEnv = (
+  name: string,
+  value: string,
+  min: number,
+  max: number = Number.MAX_SAFE_INTEGER
+): number => {
+  const n = /^\d+$/.test(value.trim()) ? parseInt(value, 10) : NaN;
+  if (!Number.isInteger(n) || n < min || n > max) {
+    throw new Error(
+      `Invalid ${name}: expected an integer between ${min} and ${max}, got "${value}"`
+    );
+  }
+  return n;
 };
 
 export const getConfig = (env?: Env): Config => {
@@ -121,6 +173,9 @@ export const getConfig = (env?: Env): Config => {
     POSTGRES_DATABASE,
     POSTGRES_HOST,
     POSTGRES_PORT,
+    POSTGRES_POOL_MAX,
+    POSTGRES_STATEMENT_TIMEOUT,
+    POSTGRES_CONNECTION_TIMEOUT,
     LOG_NAME,
     GA_KEY,
     LOG_DESTINATION,
@@ -141,7 +196,32 @@ export const getConfig = (env?: Env): Config => {
     cfg.postgres.database = POSTGRES_DATABASE;
   if (POSTGRES_HOST !== undefined) cfg.postgres.host = POSTGRES_HOST;
   if (POSTGRES_PORT !== undefined)
-    cfg.postgres.port = parseInt(POSTGRES_PORT, 10);
+    cfg.postgres.port = parseIntegerEnv(
+      "POSTGRES_PORT",
+      POSTGRES_PORT,
+      1,
+      65535
+    );
+  if (POSTGRES_POOL_MAX !== undefined)
+    cfg.postgres.max = parseIntegerEnv(
+      "POSTGRES_POOL_MAX",
+      POSTGRES_POOL_MAX,
+      1
+    );
+  if (POSTGRES_STATEMENT_TIMEOUT !== undefined)
+    cfg.postgres.statement_timeout = parseIntegerEnv(
+      "POSTGRES_STATEMENT_TIMEOUT",
+      POSTGRES_STATEMENT_TIMEOUT,
+      0,
+      MAX_TIMEOUT_MS
+    );
+  if (POSTGRES_CONNECTION_TIMEOUT !== undefined)
+    cfg.postgres.connectionTimeoutMillis = parseIntegerEnv(
+      "POSTGRES_CONNECTION_TIMEOUT",
+      POSTGRES_CONNECTION_TIMEOUT,
+      0,
+      MAX_TIMEOUT_MS
+    );
 
   if (LOG_NAME !== undefined) cfg.log.name = LOG_NAME;
   if (LOG_DESTINATION !== undefined) cfg.log.file = LOG_DESTINATION;
