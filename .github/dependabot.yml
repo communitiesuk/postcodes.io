@@ -1,7 +1,20 @@
 version: 2
 updates:
-- package-ecosystem: npm
-  directory: "/"
-  schedule:
-    interval: weekly
-  open-pull-requests-limit: 10
+  - package-ecosystem: npm
+    directory: "/"
+    # Land updates on develop so they deploy to tst first and reach prd with
+    # the next develop -> main promotion. Targeting main would bypass tst and
+    # queue a gated prd pipeline run (def 262) on every merge.
+    target-branch: develop
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # One PR a week for everything non-breaking, so the shared pnpm lockfile
+      # is regenerated once instead of conflicting across many PRs.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    # Major bumps stay as individual PRs (no group) so each breaking change can
+    # be reviewed and tested on its own.
