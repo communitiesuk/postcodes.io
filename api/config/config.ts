@@ -33,7 +33,9 @@ interface PostgresConfig {
   /**
    * Server-side statement_timeout (ms) set on every pooled connection, so a
    * runaway query is cancelled by Postgres rather than holding a connection.
-   * 0 disables it. Env: POSTGRES_STATEMENT_TIMEOUT
+   * 0 means the client sends no statement_timeout at all (pg only sends it
+   * when truthy), so any server, database or role default still applies.
+   * Env: POSTGRES_STATEMENT_TIMEOUT
    */
   statement_timeout: number;
   /**
@@ -133,17 +135,26 @@ const config: Record<Env, Config> = {
   },
 };
 
+// Largest value both Node's setTimeout (larger delays fire after 1ms) and
+// Postgres' integer statement_timeout parameter accept.
+const MAX_TIMEOUT_MS = 2147483647;
+
 /**
  * Parse an integer environment variable, rejecting anything that is not a
- * plain non-negative integer literal at or above `min`. A bare parseInt would
+ * plain non-negative integer literal within [min, max]. A bare parseInt would
  * turn "5s" into 5, "abc" into NaN and accept negatives, each of which pg
  * either silently ignores or rejects at connection time.
  */
-const parseIntegerEnv = (name: string, value: string, min: number): number => {
+const parseIntegerEnv = (
+  name: string,
+  value: string,
+  min: number,
+  max: number = Number.MAX_SAFE_INTEGER
+): number => {
   const n = /^\d+$/.test(value.trim()) ? parseInt(value, 10) : NaN;
-  if (!Number.isInteger(n) || n < min) {
+  if (!Number.isInteger(n) || n < min || n > max) {
     throw new Error(
-      `Invalid ${name}: expected an integer >= ${min}, got "${value}"`
+      `Invalid ${name}: expected an integer between ${min} and ${max}, got "${value}"`
     );
   }
   return n;
@@ -185,7 +196,12 @@ export const getConfig = (env?: Env): Config => {
     cfg.postgres.database = POSTGRES_DATABASE;
   if (POSTGRES_HOST !== undefined) cfg.postgres.host = POSTGRES_HOST;
   if (POSTGRES_PORT !== undefined)
-    cfg.postgres.port = parseInt(POSTGRES_PORT, 10);
+    cfg.postgres.port = parseIntegerEnv(
+      "POSTGRES_PORT",
+      POSTGRES_PORT,
+      1,
+      65535
+    );
   if (POSTGRES_POOL_MAX !== undefined)
     cfg.postgres.max = parseIntegerEnv(
       "POSTGRES_POOL_MAX",
@@ -196,13 +212,15 @@ export const getConfig = (env?: Env): Config => {
     cfg.postgres.statement_timeout = parseIntegerEnv(
       "POSTGRES_STATEMENT_TIMEOUT",
       POSTGRES_STATEMENT_TIMEOUT,
-      0
+      0,
+      MAX_TIMEOUT_MS
     );
   if (POSTGRES_CONNECTION_TIMEOUT !== undefined)
     cfg.postgres.connectionTimeoutMillis = parseIntegerEnv(
       "POSTGRES_CONNECTION_TIMEOUT",
       POSTGRES_CONNECTION_TIMEOUT,
-      0
+      0,
+      MAX_TIMEOUT_MS
     );
 
   if (LOG_NAME !== undefined) cfg.log.name = LOG_NAME;

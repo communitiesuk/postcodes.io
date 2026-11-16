@@ -72,6 +72,12 @@ describe("mapDatabaseError", () => {
     );
   });
 
+  it("maps pg Client's own connect timeout to a 503", () => {
+    expect(
+      errors.mapDatabaseError(new Error("timeout expired"))
+    ).toBeInstanceOf(errors.DatabasePoolTimeoutError);
+  });
+
   it("gives the mapped errors their own class name", () => {
     expect(new errors.DatabaseTimeoutError().name).toBe("DatabaseTimeoutError");
     expect(new errors.DatabasePoolTimeoutError().name).toBe(

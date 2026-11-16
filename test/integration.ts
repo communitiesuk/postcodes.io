@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import request from "supertest";
 import { postcodesioApplication, configFactory } from "./helper";
+import { pool, query } from "../api/app/queries/db";
 const app = postcodesioApplication();
 
 describe("Pages routes", () => {
@@ -39,6 +40,25 @@ describe("Utils", () => {
         .expect(200)
         .expect("Content-Type", /json/);
       expect(body.result).toBe("Ready");
+    });
+
+    it("should return 200 without queueing when the pool is busy but healthy", async () => {
+      // Check out every slot so a SELECT 1 would have to wait
+      // connectionTimeoutMillis (5s) and then fail; /ready must answer from
+      // the recent successful query instead.
+      const { postgres } = configFactory();
+      await query("SELECT 1");
+      const held = await Promise.all(
+        Array.from({ length: postgres.max }, () => pool.connect())
+      );
+      try {
+        const started = Date.now();
+        const { body } = await request(app).get("/ready").expect(200);
+        expect(body.result).toBe("Ready");
+        expect(Date.now() - started).toBeLessThan(1000);
+      } finally {
+        held.forEach((client) => client.release());
+      }
     });
   });
   describe("Ping", () => {
