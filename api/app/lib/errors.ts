@@ -227,13 +227,16 @@ export class DatabasePoolTimeoutError extends PostcodesioHttpError {
 
 // SQLSTATE raised by Postgres when statement_timeout cancels a query
 const PG_QUERY_CANCELED = "57014";
-// Messages pg-pool raises when connectionTimeoutMillis elapses: waiting for
-// a slot in a full pool, and establishing a new physical connection.
+// Messages raised when connectionTimeoutMillis elapses: pg-pool waiting for
+// a slot in a full pool, pg-pool timing out a new physical connection, and
+// pg Client's own connect timer (same value, so it can win the race and its
+// error then reaches the caller unwrapped).
 // Covered by a real pool timeout in test/db_timeout.integration.ts so a
 // pg-pool bump that rewords them fails CI rather than silently returning 500.
 const PG_POOL_TIMEOUT_MESSAGES = [
   "timeout exceeded when trying to connect",
   "Connection terminated due to connection timeout",
+  "timeout expired",
 ];
 
 const SQLSTATE = /^[0-9A-Z]{5}$/;

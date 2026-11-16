@@ -50,7 +50,8 @@ describe("Database pool timeout", () => {
     const small = new Pool({
       ...postgres,
       max: 1,
-      connectionTimeoutMillis: 500,
+      // Generous enough for the first physical connect on a slow CI agent
+      connectionTimeoutMillis: 2000,
     });
     const held = await small.connect();
     try {

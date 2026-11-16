@@ -15,9 +15,14 @@ import { getConfig } from "./config";
 const { postgres } = getConfig();
 // A pool-wait timeout means the client already waited connectionTimeoutMillis
 // for a slot; retrying after 1s would re-enter the same saturated pool.
-const poolRetryAfterSeconds = Math.max(
-  1,
-  Math.ceil(postgres.connectionTimeoutMillis / 1000)
+const retryAfterSeconds = (ms: number) => Math.max(1, Math.ceil(ms / 1000));
+const poolRetryAfterSeconds = retryAfterSeconds(
+  postgres.connectionTimeoutMillis
+);
+// A statement timeout means the query already ran statement_timeout on a
+// database that is likely overloaded; back off at least that long.
+const statementRetryAfterSeconds = retryAfterSeconds(
+  postgres.statement_timeout
 );
 
 const genericError = new PostcodesioHttpError();
@@ -69,7 +74,7 @@ const errorRenderer = (
   if (databaseError !== null) {
     response.set(
       "Retry-After",
-      String(isPoolTimeout ? poolRetryAfterSeconds : 1)
+      String(isPoolTimeout ? poolRetryAfterSeconds : statementRetryAfterSeconds)
     );
     return applyError(response, databaseError);
   }
