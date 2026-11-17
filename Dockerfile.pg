@@ -18,4 +18,8 @@ COPY docker/postgis.sql /docker-entrypoint-initdb.d/00-postgis.sql
 COPY --from=dump /out/01-postcodesiodata.sql.gz /docker-entrypoint-initdb.d/01-postcodesiodata.sql.gz
 COPY docker/prewarm.sql /docker-entrypoint-initdb.d/02-prewarm.sql
 
+# Run as the image's unprivileged postgres user (UID 999) rather than root;
+# the entrypoint supports non-root and PGDATA is owned by postgres.
+USER postgres
+
 CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
