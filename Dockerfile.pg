@@ -1,19 +1,25 @@
-FROM postgis/postgis:18-3.6
+FROM buildpack-deps:curl AS dump
 
 COPY latest /tmp/latest
-COPY docker/postgresql.conf /etc/postgresql/postgresql.conf
-COPY docker/postgis.sql /docker-entrypoint-initdb.d/00-postgis.sql
-COPY docker/prewarm.sql /docker-entrypoint-initdb.d/02-prewarm.sql
 
-# Strip \restrict/\unrestrict — pg_dump 17.6+ emits them; psql 18 in this image
-# understands them, but stripping is kept so the dump also loads on older clients.
-RUN mkdir -p /docker-entrypoint-initdb.d/ && \
-    apt-get update && apt-get install -y --no-install-recommends curl && \
+# Strip \restrict/\unrestrict — pg_dump 17.6+ emits them; psql 18 in the final
+# image understands them, but stripping is kept so the dump also loads on older clients.
+RUN mkdir -p /out && \
     curl -o /tmp/dump.sql.gz $(cat /tmp/latest) && \
     gunzip -c /tmp/dump.sql.gz \
       | grep -vE '^\\(restrict|unrestrict) ' \
-      | gzip > /docker-entrypoint-initdb.d/01-postcodesiodata.sql.gz && \
-    rm /tmp/dump.sql.gz && \
-    rm -rf /var/lib/apt/lists/*
+      | gzip > /out/01-postcodesiodata.sql.gz && \
+    rm /tmp/dump.sql.gz
+
+FROM postgis/postgis:18-3.6
+
+COPY docker/postgresql.conf /etc/postgresql/postgresql.conf
+COPY docker/postgis.sql /docker-entrypoint-initdb.d/00-postgis.sql
+COPY --from=dump /out/01-postcodesiodata.sql.gz /docker-entrypoint-initdb.d/01-postcodesiodata.sql.gz
+COPY docker/prewarm.sql /docker-entrypoint-initdb.d/02-prewarm.sql
+
+# Run as the image's unprivileged postgres user (UID 999) rather than root;
+# the entrypoint supports non-root and PGDATA is owned by postgres.
+USER postgres
 
 CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]

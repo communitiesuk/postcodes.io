@@ -9,6 +9,7 @@ import * as scottishPostcodes from "../app/controllers/scottish_postcodes_contro
 import * as terminatedPostcodes from "../app/controllers/terminated_postcodes_controller";
 import { Config } from "./config";
 import { rateLimiters } from "./rateLimit";
+import { apiCatalog, homepageLink } from "./well_known";
 
 export const routes = (app: Express, config: Config): void => {
   // Per-IP rate limits on API routes only — health checks (/ping, /ready)
@@ -60,6 +61,8 @@ export const routes = (app: Express, config: Config): void => {
 
   const docsBuildPath = join(__dirname, "../../build");
 
+  router.get("/.well-known/api-catalog", apiCatalog);
+  router.get("/", homepageLink);
   router.use(express.static(docsBuildPath));
 
   app.use(config.urlPrefix, router);
