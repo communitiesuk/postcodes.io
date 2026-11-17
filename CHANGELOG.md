@@ -1,3 +1,48 @@
+# [20.1.0](https://github.com/ideal-postcodes/postcodes.io/compare/20.0.3...20.1.0) (2026-09-29)
+
+
+### Features
+
+* publish RFC 9727 api-catalog and homepage Link headers ([cd2b876](https://github.com/ideal-postcodes/postcodes.io/commit/cd2b8761098901d849b1fa3a71b500d0092dc584))
+
+## [20.0.3](https://github.com/ideal-postcodes/postcodes.io/compare/20.0.2...20.0.3) (2026-09-29)
+
+
+### Bug Fixes
+
+* serve robots.txt with Content-Signal ([715678e](https://github.com/ideal-postcodes/postcodes.io/commit/715678e80d5d9ba7b8206116013efc7c6a70b3e4))
+
+## [20.0.2](https://github.com/ideal-postcodes/postcodes.io/compare/20.0.1...20.0.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **docker:** move to postgis/postgis:18-3.6 ([4f8369b](https://github.com/ideal-postcodes/postcodes.io/commit/4f8369b232de16afbb04bec961680772a6c2df04))
+
+## [20.0.1](https://github.com/ideal-postcodes/postcodes.io/compare/20.0.0...20.0.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **docker:** fetch dump in a build stage ([d980ec4](https://github.com/ideal-postcodes/postcodes.io/commit/d980ec48f091463de937047c021fb00fe0aa42d9))
+
+# [20.0.0](https://github.com/ideal-postcodes/postcodes.io/compare/19.1.0...20.0.0) (2026-09-11)
+
+
+* feat(scotland)!: move to Scottish Parliament 2026 designation, drop 2021 fields ([e94251c](https://github.com/ideal-postcodes/postcodes.io/commit/e94251cd55c1189c44f0a2f6e820c56fc4f5b964))
+
+
+### Features
+
+* **ONSPD:** Update to Aug 2026 ([6660009](https://github.com/ideal-postcodes/postcodes.io/commit/666000949a10b8c8683fe3428272ef80b02a1d5e)), closes [#1352](https://github.com/ideal-postcodes/postcodes.io/issues/1352) [#1330](https://github.com/ideal-postcodes/postcodes.io/issues/1330)
+
+
+### BREAKING CHANGES
+
+* scottish_parliamentary_region_2021, scottish_parliamentary_constituency_2021 and their codes counterparts are removed from /scotland/postcodes/:postcode.
+
+Claude-Session: https://claude.ai/code/session_0195FWjQNKqsSSeZuRyu8Lzi
+
 # [19.1.0](https://github.com/ideal-postcodes/postcodes.io/compare/19.0.2...19.1.0) (2026-06-10)
 
 
