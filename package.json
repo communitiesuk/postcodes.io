@@ -64,7 +64,7 @@
     "escape-string-regexp": "^5.0.0",
     "express": "~5.3.0",
     "express-basic-auth": "~1.2.1",
-    "express-prom-bundle": "~8.0.0",
+    "express-prom-bundle": "~9.0.0",
     "express-rate-limit": "~8.7.4",
     "helmet": "~8.3.0",
     "minimist": "~1.2.8",
