@@ -118,7 +118,7 @@
     "react-dom": "~19.3.0",
     "react-markdown": "~10.1.0",
     "react-redux": "~9.3.1",
-    "semantic-release": "~25.0.9",
+    "semantic-release": "~26.0.1",
     "supertest": "~7.3.2",
     "typescript": "7.0.2",
     "url": "~0.11.4",
